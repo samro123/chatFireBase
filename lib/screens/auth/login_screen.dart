@@ -30,14 +30,25 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+
+   //handles google login button click
   _handleGoogleBtnClick(){
-      _signInWithGoogle().then((users){
-        Dialogs.showProgressBar(context);
+    //for showing progress bar
+      Dialogs.showProgressBar(context);
+      _signInWithGoogle().then((users) async {
+        //for hiding progress bar
+        Navigator.pop(context);
         if(users != null){
-          Navigator.pop(context);
           print('User: ${users.user}');
           print('User: ${users.additionalUserInfo}');
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_)=>HomeScreen()));
+
+          if((await APIs.userExists())){
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_)=>HomeScreen()));
+          } else{
+            await APIs.createUser().then((value){
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_)=>HomeScreen()));
+            });
+          }
         }
 
       });
