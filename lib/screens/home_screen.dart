@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:chatfirebase/api/api.dart';
 import 'package:chatfirebase/main.dart';
+import 'package:chatfirebase/screens/auth/profile_screen.dart';
 import 'package:chatfirebase/widgets/chat_user_card.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -25,7 +26,12 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text("We chat"),
         actions: [
           IconButton(onPressed: (){}, icon:const Icon(Icons.search)),
-          IconButton(onPressed: (){}, icon:const Icon(Icons.more_vert_rounded))
+          IconButton(onPressed: (){
+            Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => ProfileScreen(users: lists[0],),)
+            );
+          }, icon:const Icon(Icons.more_vert_rounded))
         ],
       ),
       floatingActionButton: Padding(

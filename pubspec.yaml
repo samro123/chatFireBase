@@ -38,10 +38,13 @@ dependencies:
   # For integrating firebase
   firebase_core: ^2.2.0
   # For handling firebase authentication
-  firebase_auth: ^4.1.3
+  firebase_auth: ^4.7.3
   google_sign_in: ^5.4.2
   # For accessing cloud firestore database
   cloud_firestore: ^4.1.0
+  # For showing network images
+  cached_network_image: ^3.2.3
+
 
 dev_dependencies:
   flutter_test:
