@@ -1,3 +1,7 @@
+// ignore_for_file: use_build_context_synchronously
+
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chatfirebase/api/api.dart';
 import 'package:chatfirebase/helper/dialogs.dart';
@@ -7,6 +11,7 @@ import 'package:chatfirebase/screens/auth/login_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatefulWidget {
   final ChatUsers users;
@@ -18,6 +23,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
+  String? _img;
 
   @override
   Widget build(BuildContext context) {
@@ -69,13 +75,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ) ,
                       Stack(
                         children: [
+                          _img != null
+                              ?
+                          //local image
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(mq.height * .1),
+                            child: Image.file(File(_img!),
+                              width: mq.height * .2,
+                              height: mq.height * .2,
+                              fit: BoxFit.cover,
+                              ))
+                              :
+                          //image from server
                           ClipRRect(
                             borderRadius: BorderRadius.circular(mq.height * .1),
                             child: CachedNetworkImage(
                               width: mq.height * .2,
                               height: mq.height * .2,
                               imageUrl: widget.users.image,
-                              fit: BoxFit.fill,
+                              fit: BoxFit.cover,
                               // placeholder: (context, url) => CircularProgressIndicator(),
                               errorWidget: (context, url, error) => const CircleAvatar(child: Icon(CupertinoIcons.person)),
                             ),
@@ -86,7 +104,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             right: 0,
                             child: MaterialButton(
                               elevation: 1,
-                              onPressed: (){},
+                              onPressed: (){
+                                _showBottomSheet();
+                              },
                               child: const Icon(Icons.edit, color: Colors.blue,),
                               color: Colors.white,
                               shape: const CircleBorder(),
@@ -153,5 +173,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
+  }
+
+  // bottom sheet for picking a profile picture for user
+  void _showBottomSheet(){
+    showModalBottomSheet(context: context,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20)
+        )),
+        builder: (_){
+        return ListView(
+          shrinkWrap: true,
+          padding: EdgeInsets.only(top: mq.height * .03, bottom: mq.height * .05),
+          children: [
+            Text("Pick Profile Picture",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: mq.height * .02,),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                //pick from gallery button
+                ElevatedButton(
+                   style: ElevatedButton.styleFrom(
+                     backgroundColor: Colors.white,
+                     shape: const CircleBorder(),
+                     fixedSize: Size(mq.width * .3, mq.height * .15)
+                   ),
+                    onPressed: () async {
+                      final ImagePicker picker = ImagePicker();
+                      // Pick an image
+                      final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+                      if(image !=null){
+                        print('Image Path: ${image.path} -- MineType: ${image.mimeType}');
+                        setState(() {
+                          _img = image.path;
+                        });
+
+                        APIs.updateProfilePicture(File(_img!));
+
+                        //for hiding bottom sheet
+                        Navigator.pop(context);
+                      }
+
+                    },
+                    child: Image.asset("images/add_image.png")
+                ),
+                //take picture from camera button
+                ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        shape: const CircleBorder(),
+                        fixedSize: Size(mq.width * .3, mq.height * .15)
+                    ),
+                    onPressed: () async {
+                      final ImagePicker picker = ImagePicker();
+                      // Pick an image
+                      final XFile? image = await picker.pickImage(source: ImageSource.camera, imageQuality: 80);
+                      if(image !=null){
+                        print('Image Path: ${image.path}');
+                        setState(() {
+                          _img = image.path;
+                        });
+                        APIs.updateProfilePicture(File(_img!));
+
+                        //for hiding bottom sheet
+                        Navigator.pop(context);
+                      }
+                    },
+                    child: Image.asset("images/add_image.png")
+                )
+              ],
+            )
+          ],
+        );
+    });
   }
 }
