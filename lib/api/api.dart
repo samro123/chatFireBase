@@ -66,7 +66,10 @@ class APIs {
 
   //for getting all user from users from firestores database
   static Stream<QuerySnapshot<Map<String, dynamic>>> getAllUser(){
-    return firestore.collection('users').where('id', isNotEqualTo: user.uid ).snapshots();
+    return firestore
+        .collection('users')
+        .where('id', isNotEqualTo: user.uid )
+        .snapshots();
   }
 
   //for updating user information
@@ -98,6 +101,27 @@ class APIs {
     await firestore.collection('users').doc(user.uid).update({
       'image': me.image,
     });
+  }
+
+  // for getting specific user info
+  static Stream<QuerySnapshot<Map<String, dynamic>>> getUserInfo(
+      ChatUsers chatUser) {
+    return firestore
+        .collection('users')
+        .where('id', isEqualTo: chatUser.id)
+        .snapshots();
+  }
+
+
+
+  // update online or last active status of user
+  static Future<void> updateActiveStatus(bool isOnline) async{
+    firestore
+        .collection('users')
+        .doc(user.uid)
+        .update({
+      'is_online' : isOnline,
+      'last_active' : DateTime.now().millisecondsSinceEpoch.toString()});
   }
 
   /***********Chat Screen Reload APIs*************/
