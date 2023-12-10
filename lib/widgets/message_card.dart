@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chatfirebase/api/api.dart';
 import 'package:chatfirebase/helper/my_date_util.dart';
 import 'package:chatfirebase/main.dart';
@@ -35,7 +36,10 @@ class _MessageCardState extends State<MessageCard> {
         //message content
         Flexible(
           child: Container(
-            padding: EdgeInsets.all(mq.width * .04),
+            padding: EdgeInsets.all(widget.message.type == Type.image
+                ?mq.width * .03
+                :mq.width * .04
+            ),
             margin: EdgeInsets.symmetric(horizontal: mq.width * .04, vertical: mq.height * .01),
             decoration: BoxDecoration(
                 color: Colors.blue.shade100,
@@ -46,7 +50,18 @@ class _MessageCardState extends State<MessageCard> {
                 ),
                 border: Border.all(color: Colors.lightBlue)
             ),
-            child: Text(widget.message.msg, style: TextStyle(color: Colors.black87, fontSize: 15),),
+            child: widget.message.type == Type.text ?
+            Text(widget.message.msg, style: TextStyle(color: Colors.black87, fontSize: 15),)
+            :   //user profile image
+            ClipRRect(
+              borderRadius: BorderRadius.circular(15),
+              child: CachedNetworkImage(
+                imageUrl: widget.message.msg,
+                placeholder: (context, url) => CircularProgressIndicator(strokeWidth: 2,),
+                errorWidget: (context, url, error) => Icon(Icons.image,size: 70,),
+              ),
+            ),
+
           ),
         ),
 
@@ -82,7 +97,10 @@ class _MessageCardState extends State<MessageCard> {
         //message content
         Flexible(
           child: Container(
-            padding: EdgeInsets.all(mq.width * .04),
+            padding: EdgeInsets.all(widget.message.type == Type.image
+                ?mq.width * .03
+                :mq.width * .04
+            ),
             margin: EdgeInsets.symmetric(horizontal: mq.width * .04, vertical: mq.height * .01),
             decoration: BoxDecoration(
                 color: Colors.green.shade100,
@@ -93,7 +111,17 @@ class _MessageCardState extends State<MessageCard> {
                 ),
                 border: Border.all(color: Colors.lightGreen)
             ),
-            child: Text(widget.message.msg, style: TextStyle(color: Colors.black87, fontSize: 15),),
+            child: widget.message.type == Type.text ?
+            Text(widget.message.msg, style: TextStyle(color: Colors.black87, fontSize: 15),)
+                :   //user profile image
+            ClipRRect(
+              borderRadius: BorderRadius.circular(15),
+              child: CachedNetworkImage(
+                imageUrl: widget.message.msg,
+                placeholder: (context, url) => CircularProgressIndicator(strokeWidth: 2,),
+                errorWidget: (context, url, error) => Icon(Icons.image,size: 70,),
+              ),
+            ),
           ),
         ),
       ],

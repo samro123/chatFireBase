@@ -1,13 +1,16 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chatfirebase/api/api.dart';
 import 'package:chatfirebase/main.dart';
 import 'package:chatfirebase/models/chat_users.dart';
 import 'package:chatfirebase/models/message.dart';
+import 'package:chatfirebase/widgets/emoji_show.dart';
 import 'package:chatfirebase/widgets/message_card.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ChatScreen extends StatefulWidget {
   final ChatUsers users;
@@ -24,59 +27,84 @@ class _ChatScreenState extends State<ChatScreen> {
   //for handing message text changes
   final _textController = TextEditingController();
 
+
+  //for storing value of showing or hiding emoji
+  bool _showEmoji = false;
+
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          flexibleSpace: _appBar(),
-        ),
-
-        //body
-        body: Column(
-        children: [
-          Expanded(
-            child: StreamBuilder(
-              stream: APIs.getAllMessage(widget.users),
-              builder: (context, snapshot) {
-
-                switch(snapshot.connectionState){
-                //if data is loading
-                  case ConnectionState.waiting:
-                  case ConnectionState.none:
-                    return const SizedBox();
-
-
-                //if some or all data is loaded then show it
-                  case ConnectionState.active:
-                  case ConnectionState.done:
-                    final data = snapshot.data?.docs;
-                    _lists = data?.map((e) => Message.fromJson(e.data())).toList() ?? [];
-
-
-                    if(_lists.isNotEmpty){
-                      return ListView.builder(
-                        itemCount: _lists.length,
-                        padding: EdgeInsets.only(top: mq.height * .01),
-                        physics: BouncingScrollPhysics(),
-                        itemBuilder: (context, index) {
-                          return MessageCard(message: _lists[index],);
-                        },
-                      );
-                    }else{
-                      return Center(
-                          child: const Text(
-                            "Say Hi! 👋 ",
-                            style: TextStyle(fontSize: 20),
-                          ));
-                    }
-                }
-              },
+    return GestureDetector(
+      onTap: ()=> FocusScope.of(context).unfocus(),
+      child: WillPopScope(
+        //if sreach is on & back button is pressed then close search
+        //of else simple close current screen on back button click
+        onWillPop: (){
+          if(_showEmoji){
+            setState(() {
+              _showEmoji = !_showEmoji;
+            });
+            return Future.value(false);
+          } else{
+            return Future.value(true);
+          }
+        },
+        child: SafeArea(
+          child: Scaffold(
+            appBar: AppBar(
+              automaticallyImplyLeading: false,
+              flexibleSpace: _appBar(),
             ),
+
+            //body
+            body: Column(
+            children: [
+              Expanded(
+                child: StreamBuilder(
+                  stream: APIs.getAllMessage(widget.users),
+                  builder: (context, snapshot) {
+
+                    switch(snapshot.connectionState){
+                    //if data is loading
+                      case ConnectionState.waiting:
+                      case ConnectionState.none:
+                        return const SizedBox();
+
+
+                    //if some or all data is loaded then show it
+                      case ConnectionState.active:
+                      case ConnectionState.done:
+                        final data = snapshot.data?.docs;
+                        _lists = data?.map((e) => Message.fromJson(e.data())).toList() ?? [];
+
+
+                        if(_lists.isNotEmpty){
+                          return ListView.builder(
+                            itemCount: _lists.length,
+                            padding: EdgeInsets.only(top: mq.height * .01),
+                            physics: BouncingScrollPhysics(),
+                            itemBuilder: (context, index) {
+                              return MessageCard(message: _lists[index],);
+                            },
+                          );
+                        }else{
+                          return Center(
+                              child: const Text(
+                                "Say Hi! 👋 ",
+                                style: TextStyle(fontSize: 20),
+                              ));
+                        }
+                    }
+                  },
+                ),
+              ),
+              _chatInput(),
+
+              //show emojis on keyboard emoji button click & vice versa
+              if(_showEmoji)
+                EmojiShow(textControler: _textController)
+            ],),
           ),
-          _chatInput(),
-        ],),
+        ),
       ),
     );
   }
@@ -150,7 +178,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 children: [
                   //emoji button
                   IconButton(
-                    onPressed: (){},
+                    onPressed: (){
+                      FocusScope.of(context).unfocus();
+                      setState(() => _showEmoji = !_showEmoji);
+                    },
                     icon: const Icon(
                       Icons.emoji_emotions,
                       color: Colors.blueAccent,
@@ -162,6 +193,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     controller: _textController,
                     keyboardType: TextInputType.multiline,
                     maxLines: null,
+                    onTap: (){
+                      if(_showEmoji) setState(() => _showEmoji = !_showEmoji);
+                    },
                     decoration: const InputDecoration(
                       hintText: 'Type Something...',
                       hintStyle: TextStyle(color: Colors.blueAccent),
@@ -170,7 +204,16 @@ class _ChatScreenState extends State<ChatScreen> {
                   )),
                   //pick image from gallery button
                   IconButton(
-                    onPressed: (){},
+                    onPressed: () async {
+                      final ImagePicker picker = ImagePicker();
+                      // Pick an image
+                      final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+                      if(image !=null){
+                        print('Image Path: ${image.path} -- MineType: ${image.mimeType}');
+                        await APIs.sendChatImage(widget.users,File(image.path));
+
+                      }
+                    },
                     icon: const Icon(
                       Icons.image,
                       color: Colors.blueAccent,
@@ -178,7 +221,16 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   //take image from camera button
                   IconButton(
-                    onPressed: (){},
+                    onPressed: () async {
+                      final ImagePicker picker = ImagePicker();
+                      // Pick an image
+                      final XFile? image = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
+                      if(image !=null){
+                        print('Image Path: ${image.path} -- MineType: ${image.mimeType}');
+                        await APIs.sendChatImage(widget.users,File(image.path));
+
+                      }
+                    },
                     icon: const Icon(
                       Icons.camera,
                       color: Colors.blueAccent,
@@ -195,7 +247,7 @@ class _ChatScreenState extends State<ChatScreen> {
           MaterialButton(
             onPressed: (){
               if (_textController.text.isNotEmpty){
-                APIs.sendMessage(widget.users, _textController.text);
+                APIs.sendMessage(widget.users, _textController.text, Type.text);
                 _textController.text = '';
               }
             },
@@ -203,6 +255,7 @@ class _ChatScreenState extends State<ChatScreen> {
             color: Colors.lightGreen,
             padding: const EdgeInsets.only(top: 10, bottom: 10, right: 5, left: 10),
             child: Icon(Icons.send, color: Colors.white, size: 28,),
+            shape: CircleBorder(),
           )
         ],
       ),
