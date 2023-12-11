@@ -4,6 +4,8 @@ import 'package:chatfirebase/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_notification_channel/flutter_notification_channel.dart';
+import 'package:flutter_notification_channel/notification_importance.dart';
 import 'firebase_options.dart';
 
 //global object for accessing device screen size
@@ -55,5 +57,13 @@ _initializeFirebase() async{
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  var result = await FlutterNotificationChannel.registerNotificationChannel(
+    description: 'For Showing Message Notification',
+    id: 'chats',
+    importance: NotificationImportance.IMPORTANCE_HIGH,
+    name: 'Chats',
+  );
+  print('\nNotification Channel Result: $result');
 }
 
